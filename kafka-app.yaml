@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kafka-cluster
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'http://forgejo-svc.forgejo.svc.cluster.local:3000/imew/gitops-cdc-migration.git'
+    targetRevision: HEAD
+    path: infra/kafka  # Trỏ đích danh vào thư mục chứa kafka-cluster.yaml
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: kafka
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true # Tự động tạo namespace kafka nếu chưa có

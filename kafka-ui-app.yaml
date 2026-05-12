@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kafka-ui
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'http://forgejo-svc.forgejo.svc.cluster.local:3000/imew/gitops-cdc-migration.git'
+    targetRevision: HEAD
+    path: infra/kafka-ui
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: kafka
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root-infrastructure
+  namespace: argocd
+  # Lưu ý: Ứng dụng "App of Apps" phải được deploy ở namespace argocd
+spec:
+  project: default
+  source:
+    # URL trỏ tới repo Forgejo (dùng domain hoặc IP nội bộ của service k8s)
+    repoURL: 'http://forgejo-svc.forgejo.svc.cluster.local:3000/imew/gitops-cdc-migration.git'
+    targetRevision: HEAD
+    # Đường dẫn tới thư mục chứa các file định nghĩa Application con
+    path: apps
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: argocd
+  syncPolicy:
+    automated:
+      # Tự động dọn dẹp các resource trên cụm nếu xóa file trên Git
+      prune: true
+      selfHeal: true

@@ -1,0 +1,73 @@
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaNodePool
+metadata:
+  name: dual-role
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 3
+  roles:
+    - controller
+    - broker
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 15Gi
+        deleteClaim: false
+  template:
+    pod:
+      affinity:
+        podAntiAffinity:
+          # Ép mỗi Kafka pod phải nằm trên một Node khác nhau
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: strimzi.io/cluster
+                    operator: In
+                    values:
+                      - my-cluster
+              topologyKey: "kubernetes.io/hostname"
+---
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: my-cluster
+  namespace: kafka
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
+spec:
+  kafka:
+    version: 4.2.0
+    metadataVersion: 4.2-IV0
+    listeners:
+      # Listener nội bộ không mã hóa
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+      # Listener nội bộ có mã hóa TLS và xác thực bằng SCRAM
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: scram-sha-512
+    authorization:
+      type: simple
+    config:
+      # High Availability & Reliability configs
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+      default.replication.factor: 3
+      min.insync.replicas: 2
+      # Retention configs
+      log.retention.hours: 168 # 7 ngày
+      log.retention.bytes: 5368709120 # 5GiB
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
